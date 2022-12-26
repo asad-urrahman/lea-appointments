@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
+from selenium_stealth import stealth
 from bs4 import BeautifulSoup
 import telegram_send
 
@@ -34,6 +35,15 @@ def chime_n(n):
 options = webdriver.ChromeOptions()
 driver = webdriver.Chrome(service=driverService, options=options)
 
+# Selenium Stealth settings
+stealth(driver,
+      languages=["en-US", "en"],
+      vendor="Google Inc.",
+      platform="Win32",
+      webgl_vendor="Intel Inc.",
+      renderer="Intel Iris OpenGL Engine",
+      fix_hairline=True,
+)
 
 
 def load_page():

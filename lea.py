@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
+from selenium_stealth import stealth
 from bs4 import BeautifulSoup
 import telegram_send
 
@@ -32,6 +33,7 @@ def chime_n(n):
 # options.headless = True
 # options.add_argument('--headless')
 options = webdriver.ChromeOptions()
+# options.add_argument("--headless")
 driver = webdriver.Chrome(service=driverService, options=options)
 
 
@@ -40,13 +42,30 @@ def load_page():
     try:
         print ("Page loading ...")
 
-        # homepage
-        url = "https://otv.verwalt-berlin.de/ams/TerminBuchen?lang=en"
-        driver.get(url)
+        # driver.refresh()
+        try:
+            driver.switchTo().alert().accept()
+        except: 
+            pass
 
         # Disable all alerts in page:
         driver.execute_script("window.alert = function() {};")
         time.sleep(1)
+
+        # Selenium Stealth settings
+        stealth(driver,
+            languages=["en-US", "en"],
+            vendor="Google Inc.",
+            platform="Win32",
+            webgl_vendor="Intel Inc.",
+            renderer="Intel Iris OpenGL Engine",
+            fix_hairline=True,
+        )
+
+
+        # homepage
+        url = "https://otv.verwalt-berlin.de/ams/TerminBuchen?lang=en"
+        driver.get(url)
 
         book_appointment = WebDriverWait(driver, 60).until(
             EC.element_to_be_clickable((By.XPATH, "//*[contains(text(), 'Book Appointment')]")))
@@ -105,52 +124,80 @@ def service_selection():
     time.sleep(2)
 
 
-	# #  Apply for a residence permit
-    # print("Selecting Residence Title")
-    # residence_title = WebDriverWait(driver, waiting_time).until(
-    #     EC.element_to_be_clickable((By.CLASS_NAME, "kachel-461-0-1")))
-    # residence_title.click()
-    # time.sleep(2)
-
-
-    # Extend a residence title
-    print("Selecting Extend a residence title")
+	#  Apply for a residence permit
+    print("Selecting Residence Title")
     residence_title = WebDriverWait(driver, waiting_time).until(
-        EC.element_to_be_clickable((By.CLASS_NAME, "kachel-461-0-2")))
-        # EC.element_to_be_clickable((By.CSS_SELECTOR, "div.ozg-kachel.kachel-461-0-2.level1")))
+        EC.element_to_be_clickable((By.CLASS_NAME, "kachel-461-0-1")))
     residence_title.click()
     time.sleep(2)
 
 
-    # Education Reasons
-    print("Selecting Education Reasons")
-    education_reasons = WebDriverWait(driver, waiting_time).until(
-        EC.element_to_be_clickable((By.CLASS_NAME, "accordion-461-0-2-3")))
-    education_reasons.click()
-    time.sleep(2)
-
-
-    # Family Reasons
-    # print("Selecting Family Reasons")
-    # family_reasons = WebDriverWait(driver, waiting_time).until(
-    #     EC.element_to_be_clickable((By.CLASS_NAME, "accordion-461-0-1-4")))
-    # family_reasons.click()
+    # # Extend a residence title
+    # print("Selecting Extend a residence title")
+    # residence_title = WebDriverWait(driver, waiting_time).until(
+    #     EC.element_to_be_clickable((By.CLASS_NAME, "kachel-461-0-2")))
+    #     # EC.element_to_be_clickable((By.CSS_SELECTOR, "div.ozg-kachel.kachel-461-0-2.level1")))
+    # residence_title.click()
     # time.sleep(2)
 
 
-    # Residence permit for the purpose of studying (sect. 16b)
-    print("Selecting Residence permit for the purpose of studying (sect. 16b)")
+    # # Education Reasons
+    # print("Selecting Education Reasons")
+    # education_reasons = WebDriverWait(driver, waiting_time).until(
+    #     EC.element_to_be_clickable((By.CLASS_NAME, "accordion-461-0-2-3")))
+    # education_reasons.click()
+    # time.sleep(2)
+
+
+    # Family Reasons
+    print("Selecting Family Reasons")
+    family_reasons = WebDriverWait(driver, waiting_time).until(
+        EC.element_to_be_clickable((By.CLASS_NAME, "accordion-461-0-1-4")))
+    family_reasons.click()
+    time.sleep(2)
+
+
+    # # Residence permit for the purpose of studying (sect. 16b)
+    # print("Selecting Residence permit for the purpose of studying (sect. 16b)")
+    # residence_permit = WebDriverWait(driver, waiting_time).until(
+    #     EC.element_to_be_clickable((By.ID, "SERVICEWAHL_EN461-0-2-3-305244")))
+    # residence_permit.click()
+    # time.sleep(2)
+
+
+    # # Residence permit for a newborn foreign child - Initial issuance (section 33)
+    print("Selecting Residence permit for a newborn foreign child - Initial issuance (section 33)")
     residence_permit = WebDriverWait(driver, waiting_time).until(
-        EC.element_to_be_clickable((By.ID, "SERVICEWAHL_EN461-0-2-3-305244")))
+        EC.element_to_be_clickable((By.ID, "SERVICEWAHL_EN461-0-1-4-324269")))
     residence_permit.click()
     time.sleep(2)
 
 
-    print("Selecting Next")
-    service_selection_next = WebDriverWait(driver, waiting_time).until(
-        EC.element_to_be_clickable((By.ID, "applicationForm:managedForm:proceed")))
-    service_selection_next.click()
-    time.sleep(5)
+
+    x = 1
+    while True:
+        print("Selecting Next")
+        service_selection_next = WebDriverWait(driver, waiting_time).until(
+            EC.element_to_be_clickable((By.ID, "applicationForm:managedForm:proceed")))
+        service_selection_next.click()
+        time.sleep(5)
+
+        try:
+            element = WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "errorMessage")))
+            errorMessage = element.get_attribute("innerHTML")
+
+            # Unfortunately, it is currently not possible to reserve an appointment.
+            print('\033[1;31;40mNext failed; No appointments found: {0}\033[0;37;40m'.format(errorMessage))
+
+        except:
+            print("Next successful")
+            pass
+
+        if x > 3:
+            raise Exception('Next-Attempts', 'max attempts')
+
+        x += 1
 
 
 def find_available_date(html, acceptable_dates):
